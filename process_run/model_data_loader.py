@@ -1,6 +1,5 @@
 from cmath import tau
 import os
-import sys
 import f90nml
 import numpy as np
 import xarray as xr
@@ -25,8 +24,9 @@ class MonthlyDataset:
         """ Sets the variables needed for the precipitation age calculation."""
         qT = self.ds.sphum_age_1
         self.q = self.ds.sphum
-        self.tau = qT / self.q
-        self.shape = self.ds.sphum_age_2 / self.q
+        safe_q = xr.where(self.q == 0, np.nan, self.q)
+        self.tau = qT / safe_q
+        self.shape = self.ds.sphum_age_2 / safe_q
         self.ps = self.ds.ps.values/100
         self.pfull = self.ds.pfull.values
         self.dq_conv = self.ds.dt_qg_convection
@@ -78,7 +78,7 @@ class MonthlyDataset:
         self.ds.shape_parameter.attrs["long_name"] = "Shape Parameter of Water Vapor Age Distribution"
 
     def save_dataset(self):
-        """ Overwrites the modified dataset with the added precipitation age variable to a new NetCDF file."""
+        """Save the modified dataset with the added precipitation age variables to a new NetCDF file with a '_with_precipitation_age' suffix."""
         self.ds.to_netcdf(f"{self.input_file_path}_with_precipitation_age.nc", mode = "w")
         
 class MultiYearDataset(MonthlyDataset):
@@ -102,7 +102,7 @@ class MultiYearDataset(MonthlyDataset):
     def save_namelist(self):
         namelist = self.get_namelist()
         output_namelist_path = f"{self.output_dir}input_namelist.nml"
-        f90nml.write(namelist, output_namelist_path)
+        f90nml.write(namelist, output_namelist_path,force=True)
     
     def load_dataset(self):
         """ Load the diagnostic dataset for the given experiment and month."""
@@ -110,11 +110,14 @@ class MultiYearDataset(MonthlyDataset):
         for month in range(self.month_start, self.month_end + 1):
             file_path = f"{self.input_dir}run{month:04d}/atmos_monthly_with_precipitation_age.nc"
             file_paths.append(file_path)
-        return xr.open_mfdataset(file_paths)
+        return xr.open_mfdataset(file_paths, chunks={"time": 10}, parallel=True)
     
-    def save_diagnostic_dataset(self,diganostic_name):
+    def save_diagnostic_dataset(self,diagnostic_name):
         """ Save the loaded diagnostic to a new NetCDF file."""
-        output_file_path = f"{self.output_dir}{diganostic_name}.nc"
-        diagnostic = self.ds[diganostic_name]
-        diagnostic.to_netcdf(output_file_path)
-        return output_file_path
+        output_file_path = f"{self.output_dir}{diagnostic_name}.nc"
+        try:
+            diagnostic = self.ds[diagnostic_name]
+            diagnostic.to_netcdf(output_file_path)
+            return output_file_path
+        except Exception as e:
+            raise e

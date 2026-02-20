@@ -1,8 +1,7 @@
 import model_data_loader as mdl
 import sys
 from datetime import datetime as dt
-import xarray as xr
-import matplotlib.pyplot as plt
+
     
 DIAGNOSTIC_VARIABLES = [
     "ps",
@@ -55,7 +54,7 @@ def add_age_diagnostics_to_monthly_dataset(experiment_name : str, month : int):
     monthly_dataset.add_precipitation_age_to_ds()
     monthly_dataset.save_dataset()
     t_final = dt.now()
-    print(f"Saved age diagnostics for month {month} of experiment: {experiment_name}: {t_final-t0_} s",file=sys.stdout, flush=True)
+    logger.log(f"Saved age diagnostics for month {month} of experiment: {experiment_name}: {t_final-t0_}")
 
 
 class Logger:
@@ -70,7 +69,10 @@ if __name__ == "__main__":
     experiment_name = str(sys.argv[1])
     month_start = int(sys.argv[2])
     month_end = int(sys.argv[3])
-    print(f"Processing experiment: {experiment_name} for months {month_start} to {month_end}", file=sys.stdout, flush=True)
+    global logger
+    logger = Logger(experiment_name)
+    
+    logger.log(f"Processing experiment: {experiment_name} for months {month_start} to {month_end}")
     for month in range(month_start, month_end + 1):
         add_age_diagnostics_to_monthly_dataset(experiment_name, month)
     
@@ -78,7 +80,10 @@ if __name__ == "__main__":
     data_obj = mdl.MultiYearDataset(experiment_name, month_start, month_end)
     data_obj.create_saved_data_dir()
     for diag in DIAGNOSTIC_VARIABLES:
-        data_obj.save_diagnostic_dataset(diag)
+        try:
+            data_obj.save_diagnostic_dataset(diag)
+        except Exception as e:
+            logger.log(f"Error saving diagnostic {diag}: {e}")
     t1 = dt.now()
     data_obj.save_namelist()
-    print(f"Saved all diagnostic datasets for experiment: {experiment_name} in {t1-t0}s",file=sys.stdout, flush=True)
+    logger.log(f"Saved all diagnostic datasets for experiment: {experiment_name} in {t1-t0}")
