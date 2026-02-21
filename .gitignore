@@ -1,3 +1,9 @@
 data
 figures
 .outdated
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite

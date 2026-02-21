@@ -5,7 +5,7 @@ import numpy as np
 import xarray as xr
 
 SCRATCH_DATA_PATH = "/home/philbou/scratch/isca_data/"
-PROJECT_DIR = "/home/philbou/projects/def-rfajber/philbou/masters/"
+PROJECT_DIR = "/home/philbou/projects/def-rfajber/philbou/wva_data/"
 
 
 class MonthlyDataset:
