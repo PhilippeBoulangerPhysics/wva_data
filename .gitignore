@@ -7,3 +7,5 @@ __pycache__
 *.pyd
 *.db
 *.sqlite
+.ipynb_checkpoints
+*-checkpoint.ipynb
