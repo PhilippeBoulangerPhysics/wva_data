@@ -34,7 +34,7 @@ if __name__ == "__main__":
     experiment_name = str(sys.argv[1])
     month_start = int(sys.argv[2])
     month_end = int(sys.argv[3])
-    num_cpus = 10
+    num_cpus = 4
     
     logger = Logger(experiment_name)
     
